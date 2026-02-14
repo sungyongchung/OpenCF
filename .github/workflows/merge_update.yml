@@ -1,0 +1,49 @@
+name: Update Leaderboard Website
+
+on:
+  # Allow clicking the "Run workflow" button manually
+  workflow_dispatch:
+
+  push:
+    branches: [ main ]
+    paths:
+      - 'submissions/**'       # Run when someone submits a model
+      - 'scripts/**'           # Run when you update the logic
+      - '.github/workflows/**' # Run when you update this file
+
+jobs:
+  update-page:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Regenerate Leaderboard JSON
+        env:
+          GT_PASSWORD: ${{ secrets.GT_PASSWORD }}
+        run: python scripts/update_leaderboard.py
+
+      - name: Commit and Push JSON
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add docs/leaderboard_data.json
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to leaderboard. Skipping push."
+          else
+            git commit -m "Auto-update leaderboard"
+            
+            # PULL BEFORE PUSH: Fixes the race condition if two merges happen at once
+            git pull --rebase origin main
+            
+            git push
+          fi

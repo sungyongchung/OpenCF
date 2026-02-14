@@ -1,0 +1,141 @@
+# OpenCF: A Standardized Benchmark for Car-Following Model Evaluation
+
+[**Sungyong Chung**](https://scholar.google.com/citations?user=7jX4Aw8AAAAJ&hl=en&oi=ao) &nbsp;•&nbsp; [**Alireza Talebpour**](https://scholar.google.com/citations?user=lW4PAysAAAAJ&hl=en) &nbsp;•&nbsp; [**Yanlin Zhang**](https://scholar.google.com/citations?user=qhO_nfcAAAAJ&hl=en)
+
+<br>
+
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-Live-brightgreen)](https://sungyong-chung.github.io/OpenCF/)
+
+**OpenCF** benchmark is an open-source evaluation framework for car-following models.
+
+It provides a standardized testbed to benchmark car-following models against real-world data derived from high-fidelity onboard sensors of Waymo vehicles.
+
+🔗 **[View the Live Leaderboard](https://sungyong-chung.github.io/OpenCF/)**
+
+---
+
+## 📂 Dataset Access
+
+This benchmark utilizes a massive repository of over **32,500** car-following pairs (approx. **84.5** hours of driving) collected from Waymo vehicles.
+
+* **Training Data (`train.csv`):** [**DOWNLOAD HERE (Google Drive)**](https://drive.google.com/file/d/13I8crm9Dm8QQH4Hmz8G6yHuuabRmnkut/view?usp=share_link) *(Currently restricted: Access will be open to the public soon!)*
+    * *Contains **29,559** processed pairs for model calibration/training.*
+    * *Total Volume: **2.79 million+** time steps (approx. **76.7** hours).*
+    * *You may use this data to train your model, but it is not required for evaluation.*
+* **Test Input (`benchmark_data/test_input.csv`):** Included in this repo.
+    * *Contains **3,000** held-out pairs for the leaderboard.*
+    * *Total Duration: Approx. **7.8** hours of evaluation scenarios.*
+    * *Leader: The complete trajectory is provided for the entire duration.*
+    * *Follower: Only the first 2.9s of history is provided. Your model must predict the follower's behavior from t=3.0s onwards.*
+
+### ⚠️ A Note on Data Processing
+To maintain the integrity of the benchmark and prevent overfitting to specific filtering criteria, **we do not disclose the exact logic used to extract car-following pairs from the raw Waymo data.**
+
+However, please note:
+1.  **Identical Processing:** The Training Set and Test Set were generated using the **exact same** filtering, extraction, and smoothing pipeline.
+2.  **Consistency:** Models trained on the provided `train.csv` will encounter a statistically similar distribution in the test set.
+
+---
+
+## 🏆 How to Participate
+
+We use an automated **Evaluation-as-a-Service** workflow. You do not need to run the evaluation scripts yourself; GitHub Actions will do it for you.
+
+### 1. Prepare Your Model
+1.  Download `benchmark_data/test_input.csv`.
+2.  Run your model to generate trajectories for all pairs.
+3.  **Format:** Your output CSV must strictly follow the format below.
+    * **⚠️ FILE SIZE LIMIT:** To keep file sizes under 100MB (GitHub limit), your submission **MUST ONLY contain predictions starting from `t=3.0s`**.
+    * **DO NOT** include the history (0.0s - 2.9s) in your submission file.
+
+| Column | Description |
+| :--- | :--- |
+| `CF_pair_id` | ID matching the test set |
+| `sample_id` | `0` for deterministic, `0` to `5` for stochastic (Max 6 samples) |
+| `Time` | Time in seconds (**Must start at 3.0**, aligning with ground truth steps) |
+| `follower_dist` | Longitudinal position (meters) |
+| `follower_speed` | Speed (m/s) |
+| `follower_acceleration`| Acceleration (m/s²) |
+
+*See `benchmark_data/submission_template.csv`.*
+
+### 2. Submit Your Results
+1.  **Fork** this repository.
+2.  **Add your files:** Place your results CSV file into the `submissions/` folder.
+    * *Naming convention: `ModelName.csv`.*
+    * **⚠️ IMPORTANT:** **Do not modify any other files** in the repository (e.g., scripts, workflows, or existing submissions).
+    * *Pull Requests that modify system files or delete other users' models will be automatically flagged and may be rejected.*
+3.  Open a **Pull Request (PR)** to the `main` branch of this repository.
+
+### 3. (Optional) Submit Model Metadata
+To display details about your model on the leaderboard (Description, Calibration, Papers), submit a JSON file with the **same filename** as your CSV.
+
+*Format: `submissions/MyModel.json`*
+```json
+{
+    "description": "A brief description of your model.",
+    "assumptions": "List key assumptions (e.g., constant reaction time).",
+    "calibration": "Details on how it was calibrated.",
+    "paper_link": "[https://arxiv.org/abs/](https://arxiv.org/abs/)..."
+}
+```
+
+### 4. Automated Evaluation
+* Once your PR is opened, our **Automated Judge** (GitHub Actions) will run immediately.
+* It will evaluate your submission against the hidden Ground Truth.
+* **Check the PR comments:** The bot will post your scores (RMSE, Collision Rate, etc.) and Pass/Fail status.
+* If your submission is valid, we will merge it, and you will appear on the **Leaderboard Website**.
+
+---
+
+## 📊 Evaluation Metrics
+
+We evaluate models on three dimensions:
+
+### 1. Transition Probability Analysis
+We compare the **Geometric Mean Transition Probability** of your generated trajectories against the Ground Truth using a **Mann-Whitney U Test**.
+* **PASS:** p-value > 0.05 (Your model's behavior is statistically indistinguishable from the Ground Truth).
+* **FAIL:** p-value < 0.05.
+
+### 2. One-Step Prediction (Short-term)
+Measures accuracy at exactly `t = 3.0s` (the first predicted step). We calculate the average state (spacing, speed, and acceleration) across all submitted samples (K) before computing the error.
+* **RMSE (s):** Root Mean Square Error of Spacing.
+* **RMSE (v):** Root Mean Square Error of Speed.
+* **RMSE (a):** Root Mean Square Error of Acceleration.
+
+### 3. Open-Loop Prediction (Long-term)
+Measures consistency over the full trajectory horizon.
+* **minADE:** Minimum Average Displacement Error (over K samples).
+* **minFDE:** Minimum Final Displacement Error (at the last timestep over K samples).
+* **Collision Rate:** Percentage of test pairs where the follower collides with the leader (`follower_dist > leader_dist`).
+
+---
+
+## 📂 Repository Structure
+
+```text
+OpenCF-Benchmark/
+├── benchmark_data/           # Test inputs and Reference Models
+│   ├── reference_model.pkl   # Transition Matrix for the "Judge"
+│   ├── test_input.csv        # Input data for your model
+│   └── submission_template.csv
+├── submissions/              # Community Submissions (CSVs go here)
+├── scripts/                  # Evaluation Logic (Python)
+├── docs/                     # Leaderboard Website Source
+└── README.md                 # This file
+```
+
+---
+
+## 📄 Citation
+
+If you use this benchmark or dataset please cite the following work.
+
+```bibtex
+@article{chung2025characterizing,
+  title={Characterizing Lane Changing Behavior in Mixed Traffic},
+  author={Chung, Sungyong and Talebpour, Alireza and Hamdar, Samer H},
+  journal={arXiv preprint arXiv:2512.07219},
+  year={2025}
+}
+```

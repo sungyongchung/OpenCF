@@ -1,0 +1,28 @@
+# Ignore Mac system files
+.DS_Store
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore large Data files
+*.parquet
+
+# Ignore the preparation script
+scripts/00_prepare_benchmark_data.py
+scripts/00_dataset_statistics.py
+scripts/03_calculate_gt_transition_probability.py
+scripts/04_train_mccf.py
+scripts/05_generate_mccf_submission.py
+
+# Don't show the ground truth
+benchmark_data/test_ground_truth.csv
+baselines/submissions/
+
+# Provide training set from Google Drive.
+benchmark_data/train.csv
+benchmark_data/models/
+
+# Ignore local IDE settings
+.idea/
+.vscode/
