@@ -114,7 +114,7 @@ Measures consistency over the full trajectory horizon.
 ## 📂 Repository Structure
 
 ```text
-OpenCF-Benchmark/
+OpenCF/
 ├── benchmark_data/           # Test inputs and Reference Models
 │   ├── reference_model.pkl   # Transition Matrix for the "Judge"
 │   ├── test_input.csv        # Input data for your model
