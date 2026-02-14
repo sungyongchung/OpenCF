@@ -61,11 +61,12 @@ We use an automated **Evaluation-as-a-Service** workflow. You do not need to run
 
 ### 2. Submit Your Results
 1.  **Fork** this repository.
-2.  **Add your files:** Place your results CSV file into the `submissions/` folder.
+2.  **Create a branch:** In your fork, create a new branch for your submission (e.g., `submission/MyModel`).
+3.  **Add your files:** Upload your CSV file into the `submissions/` folder on that branch.
     * *Naming convention: `ModelName.csv`.*
-    * **⚠️ IMPORTANT:** **Do not modify any other files** in the repository (e.g., scripts, workflows, or existing submissions).
+    * **⚠️ IMPORTANT:** **Do not modify any other files** (e.g., scripts, workflows, or existing submissions).
     * *Pull Requests that modify system files or delete other users' models will be automatically flagged and may be rejected.*
-3.  Open a **Pull Request (PR)** to the `main` branch of this repository.
+4.  Open a **Pull Request (PR)** from your branch to the `main` branch of this repository.
 
 ### 3. (Optional) Submit Model Metadata
 To display details about your model on the leaderboard (Description, Calibration, Papers), submit a JSON file with the **same filename** as your CSV.
